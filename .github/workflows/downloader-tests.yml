@@ -1,0 +1,30 @@
+name: Downloader tests
+
+on:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/downloader-tests.yml'
+  push:
+    branches: [dev, 'fix/**']
+    paths:
+      - 'src/**'
+      - 'go.mod'
+      - 'go.sum'
+      - '.github/workflows/downloader-tests.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go test -race ./src/downloader
