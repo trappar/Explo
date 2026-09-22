@@ -31,7 +31,7 @@ export function UpdateNotification() {
   const [dismissed, setDismissed] = useState(false)
 
   useEffect(() => {
-    if (RUNNING_VERSION === 'dev') return
+    if (RUNNING_VERSION === 'dev' || RUNNING_VERSION.startsWith('trappar-')) return
 
     // Restore cached result immediately for UI, fetch in background if needed
     try {

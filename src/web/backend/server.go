@@ -98,6 +98,10 @@ func (s *Server) Start() error {
 }
 
 func checkForUpdate() {
+	// Personal fork builds are updated through the upstream merge workflow.
+	if strings.HasPrefix(config.Version, "trappar-") {
+		return
+	}
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Get("https://api.github.com/repos/LumePart/Explo/releases/latest")
 	if err != nil {

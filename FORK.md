@@ -81,7 +81,9 @@ upstream Dockerfile), Python 3, and a C compiler for Go's race detector. It buil
 web UI, runs all Go tests with the race detector, and compiles the application.
 The fork CI runs this on pushes to dev, maintenance branches, and pull requests.
 Upstream release/publishing jobs are gated to the official repository; this fork's
-CI validates changes without automatically publishing or deploying them.
+CI validates changes without automatically publishing or deploying them. Fork
+builds (`trappar-<commit>`) skip official-binary update prompts; use the merge
+workflow above to incorporate new official releases.
 
 For the NAS, run `scripts/build-nas.sh` from a clean committed checkout. It exports
 that commit with git archive, transfers it over SSH to
