@@ -1,3 +1,5 @@
+# Explicit declaration also supports the Synology legacy builder.
+ARG BUILDPLATFORM
 FROM --platform=$BUILDPLATFORM node:20-alpine AS ui-builder
 ARG VERSION=dev
 WORKDIR /app/src/web/frontend
