@@ -1,0 +1,28 @@
+name: Fork checks
+
+on:
+  push:
+    branches: [dev, 'maintenance/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: src/web/frontend/package-lock.json
+      - run: scripts/check.sh
+      - run: for script in scripts/*.sh; do sh -n "$script"; done

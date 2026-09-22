@@ -1,5 +1,9 @@
 # Explo - Music Discovery for Self-Hosted Music Systems
 
+> This is [trappar’s maintained fork](https://github.com/trappar/Explo), on `dev`.
+> See [FORK.md](FORK.md) for our fixes, upstream merges, testing, and deployment.
+> Agent instructions are in [AGENTS.md](AGENTS.md).
+
 
 [![Discord](https://img.shields.io/discord/1497141529696014409?style=flat&logo=Discord&labelColor=white&color=black&link=https%3A%2F%2Fdiscord.gg%2FuFWWPaN2zk)](https://discord.gg/uFWWPaN2zk)
 

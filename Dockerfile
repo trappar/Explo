@@ -17,6 +17,9 @@ COPY ./ .
 # Copy the built React frontend into the embed path
 COPY --from=ui-builder /app/src/web/dist ./src/web/dist
 
+# Validate before producing a deployable fork image.
+RUN go test -timeout 2m ./...
+
 # Build the Go binary based on the target architecture
 ARG TARGETARCH
 ARG VERSION=dev
