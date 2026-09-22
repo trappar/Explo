@@ -690,7 +690,7 @@ export function PlaylistCard({
                 onMouseLeave={e => { e.currentTarget.style.background = 'none' }}
               >
                 <span>
-                  Save each run as new playlist<span
+                  Use dated playlists<span
                     role="button"
                     onClick={e => { e.stopPropagation(); setReplaceInfoOpen(o => !o) }}
                     onMouseEnter={e => { e.stopPropagation(); setReplaceInfoOpen(true) }}
@@ -702,7 +702,7 @@ export function PlaylistCard({
               </button>
               {replaceInfoOpen && (
                 <span style={{ fontSize: 11, color: '#999', padding: '4px 14px 10px', lineHeight: 1.4 }}>
-                  When on, creates a new dated playlist each run instead of overwriting.
+                  When on, use a dated playlist name. When off, keep the same playlist name for each refresh.
                 </span>
               )}
             </div>

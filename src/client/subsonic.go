@@ -19,8 +19,8 @@ import (
 
 type FailedResp struct {
 	SubsonicResponse struct {
-		Status        string `json:"status"`
-		Error         struct {
+		Status string `json:"status"`
+		Error  struct {
 			Code    int    `json:"code"`
 			Message string `json:"message"`
 		} `json:"error"`
@@ -29,29 +29,30 @@ type FailedResp struct {
 
 type SubResponse struct {
 	SubsonicResponse struct {
-		Status        string        `json:"status"`
-		Version       string        `json:"version"`
-		Type          string        `json:"type"`
-		ServerVersion string        `json:"serverVersion"`
+		Status        string `json:"status"`
+		Version       string `json:"version"`
+		Type          string `json:"type"`
+		ServerVersion string `json:"serverVersion"`
 		SearchResult3 struct {
 			Song []struct {
-				ID            string    `json:"id"`
-				Title         string    `json:"title"`
-				Artist        string    `json:"artist"`
-				Album         string    `json:"album"`
-				Duration      int       `json:"duration"`
-				MusicBrainzID string    `json:"musicBrainzId"`
-				Path          string    `json:"path"`
+				ID            string `json:"id"`
+				Title         string `json:"title"`
+				Artist        string `json:"artist"`
+				Album         string `json:"album"`
+				Duration      int    `json:"duration"`
+				MusicBrainzID string `json:"musicBrainzId"`
+				Path          string `json:"path"`
 			} `json:"song"`
 		} `json:"searchResult3"`
-		Playlists     struct {
+		Playlists struct {
 			Playlist []Playlist `json:"playlist"`
 		} `json:"playlists"`
-		Playlist      Playlist `json:"playlist"`
+		Playlist Playlist `json:"playlist"`
 	} `json:"subsonic-response"`
 }
 
 type Playlist struct {
+	ReadOnly  bool      `json:"readonly"`
 	ID        string    `json:"id"`
 	Name      string    `json:"name"`
 	Comment   string    `json:"comment,omitempty"`
@@ -83,10 +84,10 @@ type ScanState struct {
 }
 
 type Subsonic struct {
-	Token string
-	Salt string
+	Token      string
+	Salt       string
 	HttpClient *util.HttpClient
-	Cfg config.ClientConfig
+	Cfg        config.ClientConfig
 }
 
 func NewSubsonic(cfg config.ClientConfig, httpClient *util.HttpClient) *Subsonic {
@@ -100,7 +101,6 @@ func (c *Subsonic) AddHeader() error {
 
 func (c *Subsonic) GetAuth() error { // Generate salt and token
 	var salt = make([]byte, 6)
-
 
 	_, err := rand.Read(salt)
 	if err != nil {
@@ -163,17 +163,17 @@ func (c *Subsonic) SearchSongs(tracks []*models.Track) error {
 				continue
 			}
 		}
-		
+
 		searchData := make([]SearchResult, 0, len(songs))
 		for _, song := range songs {
 			searchData = append(searchData, SearchResult{
-				ID: song.ID,
-				Title: song.Title,
-				Album: song.Album,
-				Artist: song.Artist,
-				Path: song.Path,
+				ID:       song.ID,
+				Title:    song.Title,
+				Album:    song.Album,
+				Artist:   song.Artist,
+				Path:     song.Path,
 				Duration: song.Duration,
-				MBID: song.MusicBrainzID,
+				MBID:     song.MusicBrainzID,
 			})
 		}
 		trackMatch, ok := BestMatch(track, searchData, c.Cfg.MatchScore)
@@ -249,9 +249,9 @@ func (c *Subsonic) CreatePlaylist(tracks []*models.Track) error {
 
 	var resp SubResponse
 	if err := util.ParseResp(body, &resp); err != nil {
-        return err
-    }
-	
+		return err
+	}
+
 	c.Cfg.PlaylistID = resp.SubsonicResponse.Playlist.ID
 	return nil
 }
@@ -266,8 +266,8 @@ func (c *Subsonic) SearchPlaylist() error {
 
 	var resp SubResponse
 	if err := util.ParseResp(body, &resp); err != nil {
-        return err
-    }
+		return err
+	}
 
 	for _, playlist := range resp.SubsonicResponse.Playlists.Playlist {
 		if playlist.Name == c.Cfg.PlaylistName {
@@ -280,7 +280,7 @@ func (c *Subsonic) SearchPlaylist() error {
 }
 
 func (c *Subsonic) UpdatePlaylist() error {
-	reqParam := fmt.Sprintf("updatePlaylist?playlistId=%s&comment=%s&f=json&public=%t",c.Cfg.PlaylistID, url.QueryEscape(c.Cfg.PlaylistDescr), c.Cfg.PublicPlaylist)
+	reqParam := fmt.Sprintf("updatePlaylist?playlistId=%s&comment=%s&f=json&public=%t", c.Cfg.PlaylistID, url.QueryEscape(c.Cfg.PlaylistDescr), c.Cfg.PublicPlaylist)
 
 	if _, err := c.subsonicRequest(reqParam); err != nil {
 		return err
@@ -299,7 +299,7 @@ func (c *Subsonic) DeletePlaylist() error {
 
 func (c *Subsonic) subsonicRequest(reqParams string) ([]byte, error) {
 
-	reqURL := fmt.Sprintf("%s/rest/%s&u=%s&t=%s&s=%s&v=%s&c=%s",c.Cfg.URL, reqParams, c.Cfg.Creds.User, c.Token, c.Salt, c.Cfg.Subsonic.Version, c.Cfg.ClientID)
+	reqURL := fmt.Sprintf("%s/rest/%s&u=%s&t=%s&s=%s&v=%s&c=%s", c.Cfg.URL, reqParams, c.Cfg.Creds.User, c.Token, c.Salt, c.Cfg.Subsonic.Version, c.Cfg.ClientID)
 	body, err := c.HttpClient.MakeRequest("GET", reqURL, nil, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to make request %s", err.Error())

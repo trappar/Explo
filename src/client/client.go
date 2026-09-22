@@ -8,8 +8,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"time"
 	"strings"
+	"time"
 
 	"explo/src/config"
 	"explo/src/models"
@@ -17,25 +17,25 @@ import (
 )
 
 type SearchResult struct {
-	ID string
-	Title string
-	Album string
-	Artist string
-	Artists []string
-	Path string
+	ID       string
+	Title    string
+	Album    string
+	Artist   string
+	Artists  []string
+	Path     string
 	Duration int // seconds
-	MBID string
-	Score int
+	MBID     string
+	Score    int
 }
 
 // normalized track data for matching
 type NormalisedTrack struct {
-	CleanTitle string
-	MainArtist string
-	Album string
-	File string
-	Duration int
-	MBTrackID string
+	CleanTitle       string
+	MainArtist       string
+	Album            string
+	File             string
+	Duration         int
+	MBTrackID        string
 	MBReleaseTrackID string
 }
 
@@ -58,6 +58,21 @@ type APIClient interface {
 	SearchPlaylist() error
 	UpdatePlaylist() error
 	DeletePlaylist() error
+}
+
+// PlaylistSaver is implemented by servers that can replace a playlist's contents
+// while preserving its identity. Saving happens only after tracks are available.
+type PlaylistSaver interface {
+	SavePlaylist([]*models.Track) error
+}
+
+// PreparePlaylist retains the upstream lifecycle for adapters without in-place
+// updates. Persistent adapters must never delete a playlist before acquisition.
+func (c *Client) PreparePlaylist(replace bool) error {
+	if _, persistent := c.API.(PlaylistSaver); persistent || !replace {
+		return nil
+	}
+	return c.DeletePlaylist()
 }
 
 // uploadPlaylistArtwork POSTs raw image bytes to a music app's artwork endpoint.
@@ -230,7 +245,30 @@ func (c *Client) CreatePlaylist(tracks []*models.Track) error {
 		time.Sleep(time.Duration(c.Cfg.Sleep) * time.Minute)
 	}
 
-	if err := c.API.SearchSongs(tracks); err != nil { // search newly added songs
+	if saver, ok := c.API.(PlaylistSaver); ok {
+		// Downloader IDs are not library IDs. Re-resolve after scanning and abort on
+		// lookup failures rather than replacing a good playlist with incomplete data.
+		for _, track := range tracks {
+			track.Present = false
+		}
+		if err := c.API.SearchSongs(tracks); err != nil {
+			return fmt.Errorf("[%s] failed to resolve playlist tracks: %w", c.System, err)
+		}
+		available := make([]*models.Track, 0, len(tracks))
+		for _, track := range tracks {
+			if track.Present && track.ID != "" {
+				available = append(available, track)
+			}
+		}
+		if len(available) == 0 {
+			return fmt.Errorf("no library tracks available; leaving playlist unchanged")
+		}
+		if err := saver.SavePlaylist(available); err != nil {
+			return fmt.Errorf("[%s] failed to save playlist: %w", c.System, err)
+		}
+		return nil
+	}
+	if err := c.API.SearchSongs(tracks); err != nil {
 		slog.Warn("SearchSongs failed", "context", err)
 	}
 	if err := c.API.CreatePlaylist(tracks); err != nil {
@@ -257,12 +295,12 @@ func BestMatch(track *models.Track, results []SearchResult, minScore int) (Searc
 	bestScore := -1
 	var best SearchResult
 	nmTrack := NormalisedTrack{
-		CleanTitle: util.NormalizeTitle(track.CleanTitle),
-		MainArtist: track.MainArtist,
-		Album: track.Album,
-		File: filepath.Base(track.File),
-		Duration: track.Duration,
-		MBTrackID: track.MusicBrainzTrackID,
+		CleanTitle:       util.NormalizeTitle(track.CleanTitle),
+		MainArtist:       track.MainArtist,
+		Album:            track.Album,
+		File:             filepath.Base(track.File),
+		Duration:         track.Duration,
+		MBTrackID:        track.MusicBrainzTrackID,
 		MBReleaseTrackID: track.MusicBrainzReleaseTrackID}
 
 	for _, r := range results {
@@ -276,13 +314,14 @@ func BestMatch(track *models.Track, results []SearchResult, minScore int) (Searc
 		}
 	}
 	if bestScore < minScore {
-    	return SearchResult{}, false
+		return SearchResult{}, false
 	}
 	best.Score = bestScore
 	return best, true
 }
 
 const definitiveMatchScore = 1000
+
 func rankResult(track NormalisedTrack, r SearchResult) int {
 	score := 0
 
@@ -314,7 +353,7 @@ func rankResult(track NormalisedTrack, r SearchResult) int {
 	}
 	durationSet := track.Duration != 0 && r.Duration != 0
 	if durationSet {
-		durationDiff := util.Abs(r.Duration-track.Duration/1000)
+		durationDiff := util.Abs(r.Duration - track.Duration/1000)
 		switch {
 		case durationDiff < 3:
 			score += 10
@@ -323,6 +362,6 @@ func rankResult(track NormalisedTrack, r SearchResult) int {
 		case durationDiff > 30:
 			score -= 10
 		}
-}
+	}
 	return score
 }

@@ -30,11 +30,11 @@ type Song struct {
 // models.Track slices, bypassing the LB discovery step entirely.
 func loadCustomTracks(dataDir, playlistID string) ([]*models.Track, string, error) {
 	type cachedTrack struct {
-		Title      string `json:"title"`
-		Artist     string `json:"artist"`
-		MainArtist string `json:"mainArtist"`
-		Release    string `json:"release"`
-		CoverURL   string `json:"coverUrl"`
+		Title              string `json:"title"`
+		Artist             string `json:"artist"`
+		MainArtist         string `json:"mainArtist"`
+		Release            string `json:"release"`
+		CoverURL           string `json:"coverUrl"`
 		CoverPath          string `json:"coverPath"`
 		MusicBrainzTrackID string `json:"mbTrackId,omitempty"`
 	}
@@ -76,12 +76,12 @@ func loadCustomTracks(dataDir, playlistID string) ([]*models.Track, string, erro
 			mainArtist = t.Artist
 		}
 		tracks[i] = &models.Track{
-			CleanTitle: t.Title,
-			Title:      t.Title,
-			Artist:     t.Artist,
-			MainArtist: mainArtist,
-			Album:      t.Release,
-			CoverURL:   t.CoverURL,
+			CleanTitle:         t.Title,
+			Title:              t.Title,
+			Artist:             t.Artist,
+			MainArtist:         mainArtist,
+			Album:              t.Release,
+			CoverURL:           t.CoverURL,
 			CoverPath:          t.CoverPath,
 			MusicBrainzTrackID: t.MusicBrainzTrackID,
 		}
@@ -218,11 +218,8 @@ func main() {
 		slog.Error(err.Error(), "notify", true)
 		os.Exit(1)
 	}
-	if cfg.ReplacePlaylist {
-		err := client.DeletePlaylist()
-		if err != nil {
-			slog.Warn(err.Error(), "notify", true)
-		}
+	if err := client.PreparePlaylist(cfg.ReplacePlaylist); err != nil {
+		slog.Warn(err.Error(), "notify", true)
 	}
 	if cfg.Flags.CleanDownloads && cfg.DownloadCfg.UseSubDir {
 		downloader.DeleteSongs()
@@ -244,7 +241,7 @@ func main() {
 	if err := client.CreatePlaylist(tracks); err != nil {
 		slog.Warn(err.Error())
 	} else {
-		slog.Info("playlist created successfully", "system", cfg.System, "playlistName", cfg.ClientCfg.PlaylistName, "notify", true)
+		slog.Info("playlist saved successfully", "system", cfg.System, "playlistName", cfg.ClientCfg.PlaylistName, "notify", true)
 		uploadCustomPlaylistArtwork(&cfg, client)
 	}
 }
